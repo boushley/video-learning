@@ -8,6 +8,8 @@ const els = {
   uPlaneContext: document.getElementById('u-plane-canvas').getContext('2d'),
   vPlaneCanvas: document.getElementById('v-plane-canvas'),
   vPlaneContext: document.getElementById('v-plane-canvas').getContext('2d'),
+  resultCanvas: document.getElementById('result-canvas'),
+  resultContext: document.getElementById('result-canvas').getContext('2d'),
 }
 
 let sourceImage = {}
@@ -49,11 +51,34 @@ function renderPlane(context, plane, toRGB) {
   context.putImageData(planeData, 0, 0)
 }
 
-function renderPlanes() {
-  console.log('UPlane Point:', sourceImage.uPlane[(97*sourceImage.width) + 333])
+function renderRecombination() {
+  const planeData = els.resultContext.createImageData(sourceImage.width, sourceImage.height)
+  for (let i = 0; i < sourceImage.width; i++) {
+    for (let j = 0; j < sourceImage.height; j++) {
+      const pixelNumber = (j * sourceImage.width) + i
+      const pixelStart = pixelNumber * 4
+
+      const yuv = {
+        y: sourceImage.yPlane[pixelNumber],
+        u: sourceImage.uPlane[pixelNumber],
+        v: sourceImage.vPlane[pixelNumber],
+      }
+      const {r, g, b} = getRGB(yuv)
+
+      planeData.data[pixelStart] = r
+      planeData.data[pixelStart+1] = g
+      planeData.data[pixelStart+2] = b
+      planeData.data[pixelStart+3] = 255
+    }
+  }
+  els.resultContext.putImageData(planeData, 0, 0)
+}
+
+function renderOutputs() {
   renderPlane(els.yPlaneContext, sourceImage.yPlane, y => getRGB({ y, u: 0, v: 0 }))
-  renderPlane(els.uPlaneContext, sourceImage.uPlane, u => getRGB({ y: 128, u, v: -60 }))
-  renderPlane(els.vPlaneContext, sourceImage.vPlane, v => getRGB({ y: 128, u: -60, v }))
+  renderPlane(els.uPlaneContext, sourceImage.uPlane, u => getRGB({ y: 128, u, v: -67 }))
+  renderPlane(els.vPlaneContext, sourceImage.vPlane, v => getRGB({ y: 128, u: -67, v }))
+  renderRecombination()
 }
 
 function dataReady() {
@@ -61,8 +86,8 @@ function dataReady() {
 
   const pixelCount = sourceImage.width * sourceImage.height
   sourceImage.yPlane = new Uint8Array(pixelCount)
-  sourceImage.uPlane = new Uint8Array(pixelCount)
-  sourceImage.vPlane = new Uint8Array(pixelCount)
+  sourceImage.uPlane = new Int8Array(pixelCount)
+  sourceImage.vPlane = new Int8Array(pixelCount)
 
   for (let i = 0; i < sourceImage.width; i++) {
     for (let j = 0; j < sourceImage.height; j++) {
@@ -80,7 +105,7 @@ function dataReady() {
     }
   }
 
-  renderPlanes()
+  renderOutputs()
 }
 
 function drawFileToCanvas(file) {

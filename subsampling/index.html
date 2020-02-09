@@ -12,19 +12,21 @@
 #drop-area.hidden {
   display: none;
 }
-canvas {
-  display: block;
-}
     </style>
   </head>
   <body>
     <div id="drop-area">
       <h2>Drop an image in here</h2>
     </div>
+    <h1>Source Image</h1>
     <canvas id="source-canvas" width="576" height="240"></canvas>
+    <h1>Y Plane</h1>
     <canvas id="y-plane-canvas" width="576" height="240"></canvas>
+    <h1>U Plane</h1>
     <canvas id="u-plane-canvas" width="576" height="240"></canvas>
+    <h1>V Plane</h1>
     <canvas id="v-plane-canvas" width="576" height="240"></canvas>
+    <h1>Recombined Image</h1>
     <canvas id="result-canvas" width="576" height="240"></canvas>
 
       <script src="app.js"></script>
