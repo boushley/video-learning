@@ -1,0 +1,15 @@
+{
+  "name": "video-learning",
+  "version": "0.0.1",
+  "description": "A set of experiments to explore the concepts of video encoding and decoding.",
+  "main": "index.js",
+  "repository": "git@github.com:boushley/video-learning.git",
+  "author": "Aaron Boushley <boushley@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "http-server": "^0.12.1"
+  },
+  "scripts": {
+    "start": "http-server -p 8076 --no-cache ."
+  }
+}

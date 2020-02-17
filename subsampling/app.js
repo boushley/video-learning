@@ -156,4 +156,4 @@ function setupDropArea () {
   }
 }
 
-drawUrlToCanvas('/small-tears-of-steel-frame-00829.png')
+drawUrlToCanvas('/test-assets/small-tears-of-steel-frame-00829.png')
