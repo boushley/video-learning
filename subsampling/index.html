@@ -12,22 +12,87 @@
 #drop-area.hidden {
   display: none;
 }
+
+.the-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: 50px auto auto auto;
+  grid-template-areas:
+    "controls controls"
+    "source recombined"
+    "y-plane u-plane"
+    ". v-plane";
+}
+
+label {
+  padding-right: 20px;
+}
     </style>
   </head>
   <body>
     <div id="drop-area">
       <h2>Drop an image in here</h2>
     </div>
-    <h1>Source Image</h1>
-    <canvas id="source-canvas" width="576" height="240"></canvas>
-    <h1>Y Plane</h1>
-    <canvas id="y-plane-canvas" width="576" height="240"></canvas>
-    <h1>U Plane</h1>
-    <canvas id="u-plane-canvas" width="576" height="240"></canvas>
-    <h1>V Plane</h1>
-    <canvas id="v-plane-canvas" width="576" height="240"></canvas>
-    <h1>Recombined Image</h1>
-    <canvas id="result-canvas" width="576" height="240"></canvas>
+    <div class="the-grid">
+      <div style="grid-area: controls">
+        <label for="luma-samples">
+          Y Samples:
+          <select id="luma-samples">
+            <option value="4:4">4</option>
+            <option value="4:0">4:0</option>
+            <option value="2:2">2:2</option>
+            <option value="2:0">2:0</option>
+            <option value="1:1">1:1</option>
+            <option value="1:0">1:0</option>
+          </select>
+        </label>
+        <label for="chroma-samples">
+          Chroma Samples:
+          <select id="chroma-samples">
+            <option value="4:4">4:4</option>
+            <option value="4:0">4:0</option>
+            <option value="2:2">2:2</option>
+            <option value="2:0">2:0</option>
+            <option value="1:1">1:1</option>
+            <option value="1:0">1:0</option>
+          </select>
+        </label>
+        <label for="subsampled-display">
+          Subsampled Display Mode:
+          <select id="subsampled-display">
+            <option value="scaled">Scaled Down</option>
+            <option value="stretched">Stretched Down</option>
+          </select>
+        </label>
+        <label for="blending-mode">
+          Blending Mode:
+          <select id="blending-mode">
+            <option value="overwrite">Overwrite</option>
+            <option value="averaged">Scaled Down</option>
+          </select>
+        </label>
+      </div>
+      <div style="grid-area: source">
+        <h1>Source Image</h1>
+        <canvas id="source-canvas" width="576" height="240"></canvas>
+      </div>
+      <div style="grid-area: y-plane">
+        <h1>Y Plane</h1>
+        <canvas id="y-plane-canvas" width="576" height="240"></canvas>
+      </div>
+      <div style="grid-area: u-plane">
+        <h1>U Plane</h1>
+        <canvas id="u-plane-canvas" width="576" height="240"></canvas>
+      </div>
+      <div style="grid-area: v-plane">
+        <h1>V Plane</h1>
+        <canvas id="v-plane-canvas" width="576" height="240"></canvas>
+      </div>
+      <div style="grid-area: recombined">
+        <h1>Result Image</h1>
+        <canvas id="result-canvas" width="576" height="240"></canvas>
+      </div>
+    </div>
 
       <script src="app.js"></script>
   </body>

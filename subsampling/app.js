@@ -1,20 +1,54 @@
 const els = {
   dropArea: document.getElementById('drop-area'),
+  lumaSamples: document.getElementById('luma-samples'),
+  chromaSamples: document.getElementById('chroma-samples'),
+  subsampledDisplay: document.getElementById('subsampled-display'),
+  blendingMode: document.getElementById('blending-mode'),
+
   sourceCanvas: document.getElementById('source-canvas'),
-  sourceContext: document.getElementById('source-canvas').getContext('2d'),
   yPlaneCanvas: document.getElementById('y-plane-canvas'),
-  yPlaneContext: document.getElementById('y-plane-canvas').getContext('2d'),
   uPlaneCanvas: document.getElementById('u-plane-canvas'),
-  uPlaneContext: document.getElementById('u-plane-canvas').getContext('2d'),
   vPlaneCanvas: document.getElementById('v-plane-canvas'),
-  vPlaneContext: document.getElementById('v-plane-canvas').getContext('2d'),
   resultCanvas: document.getElementById('result-canvas'),
+
+  sourceContext: document.getElementById('source-canvas').getContext('2d'),
+  yPlaneContext: document.getElementById('y-plane-canvas').getContext('2d'),
+  uPlaneContext: document.getElementById('u-plane-canvas').getContext('2d'),
+  vPlaneContext: document.getElementById('v-plane-canvas').getContext('2d'),
   resultContext: document.getElementById('result-canvas').getContext('2d'),
 }
 
+const state = {}
 let sourceImage = {}
 
-setupDropArea()
+const subsampleMap = {
+  '4:4': {
+    xScale: 1,
+    yScale: 1,
+  },
+  '4:0': {
+    xScale: 1,
+    yScale: 0.5,
+  },
+  '2:2': {
+    xScale: 0.5,
+    yScale: 1,
+  },
+  '2:0': {
+    xScale: 0.5,
+    yScale: 0.5,
+  },
+  '1:1': {
+    xScale: 0.25,
+    yScale: 1,
+  },
+  '1:0': {
+    xScale: 0.25,
+    yScale: 0.5,
+  }
+}
+
+setupControls()
 
 function getYUV({r, g, b}) {
   y = (0.299 * r) + (0.587 * g) + (0.114 * b)
@@ -32,11 +66,20 @@ function getRGB({y, u, v}) {
   return {r, g, b}
 }
 
-function renderPlane(context, plane, toRGB) {
-  const planeData = context.createImageData(sourceImage.width, sourceImage.height)
-  for (let i = 0; i < sourceImage.width; i++) {
-    for (let j = 0; j < sourceImage.height; j++) {
-      const pixelNumber = (j * sourceImage.width) + i
+function renderPlane(context, plane, samples, toRGB) {
+  // TODO Implement Subsampled Display Mode
+  let planeData
+  if (state.subsampledDisplay === 'scaled') {
+    planeData = context.createImageData(Math.ceil(sourceImage.width * samples.xScale), Math.ceil(sourceImage.height * samples.yScale))
+  } else if (state.subsampledDisplay === 'stretched') {
+    planeData = context.createImageData(sourceImage.width, sourceImage.height)
+  } else {
+    throw new Exception('Unhandled subsample display type: ' + state.subsampleDisplay)
+  }
+
+  for (let i = 0; i < planeData.width; i++) {
+    for (let j = 0; j < planeData.height; j++) {
+      const pixelNumber = (j * planeData.width) + i
       const pixelStart = pixelNumber * 4
 
       const y = plane[pixelNumber]
@@ -55,13 +98,12 @@ function renderRecombination() {
   const planeData = els.resultContext.createImageData(sourceImage.width, sourceImage.height)
   for (let i = 0; i < sourceImage.width; i++) {
     for (let j = 0; j < sourceImage.height; j++) {
-      const pixelNumber = (j * sourceImage.width) + i
-      const pixelStart = pixelNumber * 4
+      const pixelStart = ((j * sourceImage.width) + i) * 4
 
       const yuv = {
-        y: sourceImage.yPlane[pixelNumber],
-        u: sourceImage.uPlane[pixelNumber],
-        v: sourceImage.vPlane[pixelNumber],
+        y: sourceImage.yPlane[pixelNumber(state.lumaSamples, i, j)],
+        u: sourceImage.uPlane[pixelNumber(state.chromaSamples, i, j)],
+        v: sourceImage.vPlane[pixelNumber(state.chromaSamples, i, j)],
       }
       const {r, g, b} = getRGB(yuv)
 
@@ -75,33 +117,56 @@ function renderRecombination() {
 }
 
 function renderOutputs() {
-  renderPlane(els.yPlaneContext, sourceImage.yPlane, y => getRGB({ y, u: 0, v: 0 }))
-  renderPlane(els.uPlaneContext, sourceImage.uPlane, u => getRGB({ y: 128, u, v: -67 }))
-  renderPlane(els.vPlaneContext, sourceImage.vPlane, v => getRGB({ y: 128, u: -67, v }))
+  renderPlane(els.yPlaneContext, sourceImage.yPlane, state.lumaSamples, y => getRGB({ y, u: 0, v: 0 }))
+  renderPlane(els.uPlaneContext, sourceImage.uPlane, state.chromaSamples, u => getRGB({ y: 128, u, v: -64 }))
+  renderPlane(els.vPlaneContext, sourceImage.vPlane, state.chromaSamples, v => getRGB({ y: 128, u: -64, v }))
   renderRecombination()
 }
 
-function dataReady() {
+function pixelCount(subsample) {
+  return (sourceImage.width * subsample.xScale) * (sourceImage.height * subsample.yScale)
+}
+
+function pixelNumber(subsample, x, y) {
+  return (Math.floor(y * subsample.yScale) * Math.floor(sourceImage.width * subsample.xScale)) + Math.floor(x * subsample.xScale)
+}
+
+function adjustCanvasSize(el, subsample) {
+  el.width = Math.ceil(sourceImage.width * subsample.xScale)
+  el.height = Math.ceil(sourceImage.height * subsample.yScale)
+}
+
+function adjustCanvasSizes() {
+  adjustCanvasSize(els.resultCanvas, subsampleMap['4:4'])
+  adjustCanvasSize(els.yPlaneCanvas, state.lumaSamples)
+  adjustCanvasSize(els.uPlaneCanvas, state.chromaSamples)
+  adjustCanvasSize(els.vPlaneCanvas, state.chromaSamples)
+}
+
+function processData() {
+  if (!state.lumaSamples || !sourceImage.width || !sourceImage.height) {
+    return
+  }
+
+  adjustCanvasSizes()
   sourceImage.imageData = els.sourceContext.getImageData(0, 0, sourceImage.width, sourceImage.height)
 
-  const pixelCount = sourceImage.width * sourceImage.height
-  sourceImage.yPlane = new Uint8Array(pixelCount)
-  sourceImage.uPlane = new Int8Array(pixelCount)
-  sourceImage.vPlane = new Int8Array(pixelCount)
+  sourceImage.yPlane = new Uint8Array(pixelCount(state.lumaSamples))
+  sourceImage.uPlane = new Int8Array(pixelCount(state.chromaSamples))
+  sourceImage.vPlane = new Int8Array(pixelCount(state.chromaSamples))
 
   for (let i = 0; i < sourceImage.width; i++) {
     for (let j = 0; j < sourceImage.height; j++) {
-      const pixelNumber = (j * sourceImage.width) + i
-      const pixelStart = pixelNumber * 4
+      const pixelStart = ((j * sourceImage.width) + i) * 4
       const pixel = {
         r: sourceImage.imageData.data[pixelStart],
         g: sourceImage.imageData.data[pixelStart + 1],
         b: sourceImage.imageData.data[pixelStart + 2],
       }
       const {y, u, v} = getYUV(pixel)
-      sourceImage.yPlane[pixelNumber] = y
-      sourceImage.uPlane[pixelNumber] = u
-      sourceImage.vPlane[pixelNumber] = v
+      sourceImage.yPlane[pixelNumber(state.lumaSamples, i, j)] = y
+      sourceImage.uPlane[pixelNumber(state.chromaSamples, i, j)] = u
+      sourceImage.vPlane[pixelNumber(state.chromaSamples, i, j)] = v
     }
   }
 
@@ -122,12 +187,31 @@ function drawUrlToCanvas(url, cb) {
     }
     sourceImage.width = img.naturalWidth
     sourceImage.height = img.naturalHeight
+    adjustCanvasSize(els.sourceCanvas, subsampleMap['4:4'])
     els.sourceContext.drawImage(img, 0, 0)
 
-    dataReady()
+    processData()
   }
 
   img.src = url
+}
+
+function setupControls() {
+  els.lumaSamples.addEventListener('change', saveControlState)
+  els.chromaSamples.addEventListener('change', saveControlState)
+  els.subsampledDisplay.addEventListener('change', saveControlState)
+  els.blendingMode.addEventListener('change', saveControlState)
+
+  setupDropArea()
+  saveControlState()
+}
+
+function saveControlState() {
+    state.lumaSamples = subsampleMap[els.lumaSamples.value]
+    state.chromaSamples = subsampleMap[els.chromaSamples.value]
+    state.subsampledDisplay = els.subsampledDisplay.value
+    state.blendingMode = els.blendingMode.value
+    processData()
 }
 
 function setupDropArea () {
