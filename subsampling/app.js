@@ -2,6 +2,7 @@ const els = {
   dropArea: document.getElementById('drop-area'),
   lumaSamples: document.getElementById('luma-samples'),
   chromaSamples: document.getElementById('chroma-samples'),
+  chromaDisplay: document.getElementById('chroma-display'),
   subsampledDisplay: document.getElementById('subsampled-display'),
   blendingMode: document.getElementById('blending-mode'),
 
@@ -117,9 +118,13 @@ function renderRecombination() {
 }
 
 function renderOutputs() {
+  const chromaAsGray = state.chromaDisplay === 'grayscale'
+  const grayScale = c => getRGB({y: c + 127, u: 0, v: 0})
+  const uColorizer = chromaAsGray ? grayScale : u => getRGB({ y: 128, u, v: -64 })
+  const vColorizer = chromaAsGray ? grayScale : v => getRGB({ y: 128, u: -64, v })
   renderPlane(els.yPlaneContext, sourceImage.yPlane, state.lumaSamples, y => getRGB({ y, u: 0, v: 0 }))
-  renderPlane(els.uPlaneContext, sourceImage.uPlane, state.chromaSamples, u => getRGB({ y: 128, u, v: -64 }))
-  renderPlane(els.vPlaneContext, sourceImage.vPlane, state.chromaSamples, v => getRGB({ y: 128, u: -64, v }))
+  renderPlane(els.uPlaneContext, sourceImage.uPlane, state.chromaSamples, uColorizer)
+  renderPlane(els.vPlaneContext, sourceImage.vPlane, state.chromaSamples, vColorizer)
   renderRecombination()
 }
 
@@ -199,6 +204,7 @@ function drawUrlToCanvas(url, cb) {
 function setupControls() {
   els.lumaSamples.addEventListener('change', saveControlState)
   els.chromaSamples.addEventListener('change', saveControlState)
+  els.chromaDisplay.addEventListener('change', saveControlState)
   els.subsampledDisplay.addEventListener('change', saveControlState)
   els.blendingMode.addEventListener('change', saveControlState)
 
@@ -209,12 +215,15 @@ function setupControls() {
 function saveControlState() {
     state.lumaSamples = subsampleMap[els.lumaSamples.value]
     state.chromaSamples = subsampleMap[els.chromaSamples.value]
+    state.chromaDisplay = els.chromaDisplay.value
     state.subsampledDisplay = els.subsampledDisplay.value
     state.blendingMode = els.blendingMode.value
     processData()
 }
 
 function setupDropArea () {
+  document.body.addEventListener('dragenter', highlight)
+  document.body.addEventListener('dragover', highlight)
   els.dropArea.addEventListener('dragenter', highlight, false)
   els.dropArea.addEventListener('dragover', highlight, false)
   els.dropArea.addEventListener('dragleave', unhighlight, false)

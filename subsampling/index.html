@@ -3,14 +3,21 @@
     <style>
 #drop-area {
   border: 5px solid blue;
-  width:  200px;
-  height: 100px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  bottom: 20px;
+  left: 20px;
+  z-index: 99999;
 }
 #drop-area.highlight {
   background-color: #333333;
 }
 #drop-area.hidden {
   display: none;
+}
+#drop-area.hidden.highlight {
+  display: block;
 }
 
 .the-grid {
@@ -62,6 +69,13 @@ label {
           <select id="subsampled-display">
             <option value="scaled">Scaled Down</option>
             <option value="stretched">Stretched Down</option>
+          </select>
+        </label>
+        <label for="chroma-display">
+          Chroma Display Mode:
+          <select id="chroma-display">
+            <option value="colorized">Colorized</option>
+            <option value="grayscale">Grayscale</option>
           </select>
         </label>
         <label for="blending-mode">
