@@ -23,12 +23,25 @@
 .the-grid {
   display: grid;
   grid-template-columns: auto auto;
-  grid-template-rows: 50px auto auto auto;
+  grid-template-rows: 50px 150px auto auto auto;
   grid-template-areas:
     "controls controls"
-    "source recombined"
+    "zoom-source zoom-result"
+    "source result"
     "y-plane u-plane"
     ". v-plane";
+}
+
+.zoomer {
+  width: 150px;
+  height: 150px;
+}
+
+.source-zoomer {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  padding-right: 10px;
 }
 
 label {
@@ -86,6 +99,9 @@ label {
           </select>
         </label>
       </div>
+      <div style="grid-area: zoom-source" class="source-zoomer">
+        <canvas id="zoom-source-canvas" class="zoomer" width="50" height="50"></canvas>
+      </div>
       <div style="grid-area: source">
         <h1>Source Image</h1>
         <canvas id="source-canvas" width="576" height="240"></canvas>
@@ -102,7 +118,10 @@ label {
         <h1>V Plane</h1>
         <canvas id="v-plane-canvas" width="576" height="240"></canvas>
       </div>
-      <div style="grid-area: recombined">
+      <div style="grid-area: zoom-result">
+        <canvas id="zoom-result-canvas" class="zoomer" width="50" height="50"></canvas>
+      </div>
+      <div style="grid-area: result">
         <h1>Result Image</h1>
         <canvas id="result-canvas" width="576" height="240"></canvas>
       </div>

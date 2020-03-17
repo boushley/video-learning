@@ -6,16 +6,20 @@ const els = {
   subsampledDisplay: document.getElementById('subsampled-display'),
   blendingMode: document.getElementById('blending-mode'),
 
+  zoomSourceCanvas: document.getElementById('zoom-source-canvas'),
   sourceCanvas: document.getElementById('source-canvas'),
   yPlaneCanvas: document.getElementById('y-plane-canvas'),
   uPlaneCanvas: document.getElementById('u-plane-canvas'),
   vPlaneCanvas: document.getElementById('v-plane-canvas'),
+  zoomResultCanvas: document.getElementById('zoom-result-canvas'),
   resultCanvas: document.getElementById('result-canvas'),
 
+  zoomSourceContext: document.getElementById('zoom-source-canvas').getContext('2d'),
   sourceContext: document.getElementById('source-canvas').getContext('2d'),
   yPlaneContext: document.getElementById('y-plane-canvas').getContext('2d'),
   uPlaneContext: document.getElementById('u-plane-canvas').getContext('2d'),
   vPlaneContext: document.getElementById('v-plane-canvas').getContext('2d'),
+  zoomResultContext: document.getElementById('zoom-result-canvas').getContext('2d'),
   resultContext: document.getElementById('result-canvas').getContext('2d'),
 }
 
@@ -210,6 +214,7 @@ function setupControls() {
 
   setupDropArea()
   saveControlState()
+  setupZoom()
 }
 
 function saveControlState() {
@@ -247,6 +252,32 @@ function setupDropArea () {
     els.dropArea.classList.remove('highlight')
     e.preventDefault()
   }
+}
+
+function setupZoom() {
+  els.sourceCanvas.addEventListener('mousemove', updateZoom)
+  els.resultCanvas.addEventListener('mousemove', updateZoom)
+}
+
+function updateZoom(e) {
+  const zoomDimension = 50
+  const half = zoomDimension / 2
+  const elRect = e.target.getBoundingClientRect()
+  const copyX = clamp(0, e.clientX - elRect.x - half, e.target.width - half)
+  const copyY = clamp(0, e.clientY - elRect.y - half, e.target.height - half)
+
+  renderZoom(copyX, copyY, zoomDimension, zoomDimension, els.sourceContext, els.zoomSourceContext)
+  renderZoom(copyX, copyY, zoomDimension, zoomDimension, els.resultContext, els.zoomResultContext)
+}
+
+function renderZoom(x, y, width, height, source, output) {
+  const sourceData = source.getImageData(x, y, width, height)
+  output.putImageData(sourceData, 0, 0)
+
+}
+
+function clamp(low, val, high) {
+  return Math.max(Math.min(val, high), low)
 }
 
 drawUrlToCanvas('../test-assets/small-tears-of-steel-frame-00829.png')
