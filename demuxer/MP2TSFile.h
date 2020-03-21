@@ -22,6 +22,8 @@ public:
     std::string getPath();
 
     std::unique_ptr<MP2TSPacket> parsePacket();
+
+    bool hasMore();
 };
 
 

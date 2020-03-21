@@ -21,9 +21,18 @@ int main (int argc, char** argv) {
 
     if (file.isOpen()) {
         auto size = file.size();
-        cout << "Opened: " << file.getPath() << " the current position is: " << size << " so we should expect: " << (size/188) << " packets with " << (size%188) << " remainder" << endl;
+        int packetCount = size / 188;
+        cout << "Opened: " << file.getPath() << " the current position is: " << size << " so we should expect: " << packetCount << " packets with " << (size%188) << " remainder" << endl;
 
-        file.parsePacket();
+        int counter = 0;
+        while(file.hasMore()) {
+            counter++;
+            if (file.parsePacket()) {
+                cout << "Loaded " << std::dec << counter << "/" << packetCount << " packets successfully" << endl;
+            } else {
+                cout << "Unable to load packet " << std::dec << counter << " expected to get " << packetCount << endl;
+            }
+        }
     } else {
         cout << "Failed to open the file: " << endl;
         exit(1);

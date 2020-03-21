@@ -24,13 +24,21 @@ int MP2TSFile::size() {
     return size;
 }
 
+bool MP2TSFile::hasMore() {
+    return !inFile.eof();
+}
+
 std::string MP2TSFile::getPath() {
     return path;
 }
 
 std::unique_ptr<MP2TSPacket> MP2TSFile::parsePacket() {
-    std::unique_ptr<std::vector<std::byte>> packetData = std::make_unique<std::vector<std::byte>>(MP2TSPacket::size);
+    std::unique_ptr<std::vector<uint8_t>> packetData = std::make_unique<std::vector<uint8_t>>(MP2TSPacket::size);
     inFile.read(reinterpret_cast<char*>(packetData->data()), MP2TSPacket::size);
+
+    if (inFile.eof()) {
+        return nullptr;
+    }
 
     return std::make_unique<MP2TSPacket>(std::move(packetData));
 }

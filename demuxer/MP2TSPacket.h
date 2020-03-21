@@ -10,7 +10,18 @@
 class MP2TSPacket {
 public:
     static const int size;
-    MP2TSPacket(std::unique_ptr<std::vector<std::byte>> bytes);
+    static const uint8_t syncByte;
+
+    std::vector<uint8_t>& rawBytes;
+    bool transportErrorIndicator;
+    bool payloadUnitStartIndicator;
+    bool transportPriority;
+    uint16_t PID;
+    uint8_t transportScramblingControl;
+    uint8_t adaptationFieldControl;
+    uint8_t continuityCounter;
+
+    MP2TSPacket(std::unique_ptr<std::vector<uint8_t>> bytes);
 };
 
 
