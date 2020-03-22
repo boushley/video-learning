@@ -7,6 +7,17 @@
 
 #import <vector>
 
+struct MP2TSAdaptationField_t {
+    bool discontinuityIndicator;
+    bool randomAccessIndicator;
+    bool elementaryStreamPriorityIndicator;
+    bool PcrFlag;
+    bool OpcrFlag;
+    bool splicingPointFlag;
+    bool transportPrivateDataFlag;
+    bool adaptationFieldExtensionFlag;
+};
+
 class MP2TSPacket {
 public:
     static const int size;
@@ -20,8 +31,13 @@ public:
     uint8_t transportScramblingControl;
     uint8_t adaptationFieldControl;
     uint8_t continuityCounter;
+    std::unique_ptr<MP2TSAdaptationField_t> adaptationField;
 
     MP2TSPacket(std::unique_ptr<std::vector<uint8_t>> bytes);
+
+private:
+    uint8_t readAdaptationField();
+    void readProgramAssociationTable(uint8_t startPoint);
 };
 
 

@@ -25,7 +25,7 @@ int MP2TSFile::size() {
 }
 
 bool MP2TSFile::hasMore() {
-    return !inFile.eof();
+    return inFile.peek() == MP2TSPacket::syncByte;
 }
 
 std::string MP2TSFile::getPath() {
