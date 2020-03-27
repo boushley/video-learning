@@ -15,6 +15,7 @@ namespace MP2TS {
     private:
         std::string path;
         std::ifstream inFile;
+        uint32_t programMapPid;
 
     public:
         File(std::string filePath);

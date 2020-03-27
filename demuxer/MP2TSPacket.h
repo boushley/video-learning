@@ -50,6 +50,7 @@ namespace MP2TS {
         std::unique_ptr<ProgramSpecificInformation_t> psiData;
 
         Packet(std::unique_ptr<std::vector<uint8_t>> bytes);
+        void readProgramMap();
 
     private:
         uint8_t readAdaptationField();

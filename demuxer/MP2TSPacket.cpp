@@ -60,6 +60,10 @@ namespace MP2TS {
                   std::endl;
     }
 
+    void Packet::readProgramMap() {
+        std::cout << "Reading Program Map" << std::endl;
+    }
+
     void Packet::readProgramAssociationTable(uint8_t startPoint) {
         psiData = std::make_unique<ProgramSpecificInformation_t>();
 

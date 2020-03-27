@@ -9,6 +9,7 @@ namespace MP2TS {
     File::File(std::string filePath): path(filePath) {
         inFile.open(path, std::ios::binary);
         inFile.unsetf(std::ios::skipws);
+        programMapPid = INT_MAX;
     }
 
     bool File::isOpen() {
@@ -42,7 +43,21 @@ namespace MP2TS {
             return nullptr;
         }
 
-        return std::make_unique<Packet>(std::move(packetData));
+        std::unique_ptr<Packet> packet = std::make_unique<Packet>(std::move(packetData));
+
+        if (packet->psiData != nullptr && packet->psiData->tableId == 0) {
+            auto entries = packet->psiData->programEntries;
+            for (auto ptr = entries.begin(); ptr < entries.end(); ptr++) {
+                if (ptr->programNumber != 0) {
+                    programMapPid = ptr->pid;
+                    break;
+                }
+            }
+        } else if (packet->PID == programMapPid) {
+            packet->readProgramMap();
+        }
+
+        return packet;
     }
 
 }
