@@ -3,12 +3,12 @@
 //
 
 #include <iostream>
-#include <fstream>
 #include <filesystem>
 #include "MP2TSFile.h"
 
 using std::cout;
 using std::endl;
+using namespace MP2TS;
 
 int main (int argc, char** argv) {
     if (argc < 2) {
@@ -17,7 +17,7 @@ int main (int argc, char** argv) {
     }
 
     std::string assetPath(std::filesystem::canonical(argv[1]));
-    MP2TSFile file(std::move(assetPath));
+    File file(std::move(assetPath));
 
     if (file.isOpen()) {
         auto size = file.size();

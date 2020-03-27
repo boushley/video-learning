@@ -10,21 +10,26 @@
 #include <fstream>
 #include "MP2TSPacket.h"
 
-class MP2TSFile {
-private:
-    std::string path;
-    std::ifstream inFile;
+namespace MP2TS {
+    class File {
+    private:
+        std::string path;
+        std::ifstream inFile;
 
-public:
-    MP2TSFile(std::string filePath);
-    bool isOpen();
-    int size();
-    std::string getPath();
+    public:
+        File(std::string filePath);
 
-    std::unique_ptr<MP2TSPacket> parsePacket();
+        bool isOpen();
 
-    bool hasMore();
-};
+        int size();
+
+        std::string getPath();
+
+        std::unique_ptr<Packet> parsePacket();
+
+        bool hasMore();
+    };
+}
 
 
 #endif //VIDEO_LEARNING_MP2TSFILE_H
