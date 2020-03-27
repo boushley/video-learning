@@ -34,20 +34,67 @@ MP2TSPacket::MP2TSPacket(std::unique_ptr<std::vector<uint8_t>> bytes): rawBytes(
         adaptationField = nullptr;
     }
 
+    uint8_t pointerField = 0;
+    if (payloadUnitStartIndicator) {
+        uint8_t pointerField = rawBytes[dataStartPoint];
+        dataStartPoint = dataStartPoint + 1 + pointerField;
+    }
+
     if (hasPayload && PID == 0) {
         readProgramAssociationTable(dataStartPoint);
     }
+
 
     std::cout << "Transport Error? " << transportErrorIndicator << " Payload Start? " << payloadUnitStartIndicator <<
         " Priority? " << transportPriority << " PID: " << PID << " scrambling? " << int(transportScramblingControl) <<
         " adaptation control? " << int(adaptationFieldControl) << " continuity counter: " << int(continuityCounter) <<
         " has adaptation? " << hasAdaptationField << " hasPayload? " << hasPayload << " data start: " << int(dataStartPoint) <<
+        " pointerField: " << (int)pointerField <<
         std::endl;
 }
 
 void MP2TSPacket::readProgramAssociationTable(uint8_t startPoint) {
-    std::cout << "Table ID: " << int(rawBytes[startPoint]) << std::endl;
+    psiData = std::make_unique<MP2TSProgramSpecificInformation_t>();
 
+    psiData->tableId = rawBytes[startPoint];
+
+    bool sectionSyntaxIndicator = rawBytes[startPoint + 1] & 0b1000'0000;
+    if (!sectionSyntaxIndicator) {
+        std::cout << "Section syntax indicator should have been 1... but it wasn't" << std::endl;
+    }
+
+    if (rawBytes[startPoint + 1] & 0b0100'0000) {
+        std::cout << "Byte that should be zero isn't!!!!!!!!!!!" << std::endl;
+    }
+
+    // reserved: rawBytes[startPoint + 1] & 0b0011'0000
+    uint16_t sectionLength = ((rawBytes[startPoint + 1] & 0b0000'1111) << 8) | rawBytes[startPoint + 2];
+    psiData->transportStreamId = (rawBytes[startPoint + 3] << 8) | rawBytes[startPoint + 4];
+
+    // reserved: rawBytes[startPoint + 5] & 0b1100'0000
+    psiData->versionNumber = rawBytes[startPoint + 5] & 0b0011'1110;
+    psiData->currentNextIndicator = rawBytes[startPoint + 5] & 0b0000'0001;
+
+    uint8_t sectionNumber = rawBytes[startPoint + 6];
+    uint8_t lastSectionNumber = rawBytes[startPoint + 7];
+
+    psiData->crc = (rawBytes[startPoint + 12] << 24) |
+                   (rawBytes[startPoint + 13] << 16) |
+                   (rawBytes[startPoint + 14] << 8) |
+                   rawBytes[startPoint + 15];
+
+    std::cout << "Table ID: " << (int)psiData->tableId << " sectionLength: " << sectionLength << " transportStreamId: " <<
+        psiData->transportStreamId << " versionNumber: " << (int)psiData->versionNumber << " currentNextIndicator: " << psiData->currentNextIndicator <<
+        " sectionNumber: " << (int)sectionNumber << " lastSectionNumber: " << (int)lastSectionNumber << " crc: " << psiData->crc << std::endl;
+
+    for (int i = sectionNumber; i <= lastSectionNumber; i++) {
+        MP2TSProgramEntries_t programEntry;
+        programEntry.programNumber = (rawBytes[startPoint + 8] << 8) | rawBytes[startPoint + 9];
+        // reserved: rawBytes[startPoint + 10] & 0b1110'0000
+        programEntry.pid = ((rawBytes[startPoint + 10] & 0b0001'1111 ) << 8) | rawBytes[startPoint + 11];
+        psiData->programEntries.push_back(programEntry);
+        std::cout << "ProgramNumber: " << psiData->programEntries[0].programNumber << " PID: " << programEntry.pid << std::endl;
+    }
 }
 
 uint8_t MP2TSPacket::readAdaptationField() {

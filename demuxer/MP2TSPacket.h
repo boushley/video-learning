@@ -18,6 +18,20 @@ struct MP2TSAdaptationField_t {
     bool adaptationFieldExtensionFlag;
 };
 
+struct MP2TSProgramEntries_t {
+    uint16_t programNumber;
+    uint16_t pid;
+};
+
+struct MP2TSProgramSpecificInformation_t {
+    uint8_t tableId;
+    uint16_t transportStreamId;
+    uint8_t versionNumber;
+    bool currentNextIndicator;
+    std::vector<MP2TSProgramEntries_t> programEntries;
+    uint32_t crc;
+};
+
 class MP2TSPacket {
 public:
     static const int size;
@@ -32,6 +46,7 @@ public:
     uint8_t adaptationFieldControl;
     uint8_t continuityCounter;
     std::unique_ptr<MP2TSAdaptationField_t> adaptationField;
+    std::unique_ptr<MP2TSProgramSpecificInformation_t> psiData;
 
     MP2TSPacket(std::unique_ptr<std::vector<uint8_t>> bytes);
 

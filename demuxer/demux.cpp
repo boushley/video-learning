@@ -27,9 +27,7 @@ int main (int argc, char** argv) {
         int counter = 0;
         while(file.hasMore()) {
             counter++;
-            if (file.parsePacket()) {
-                cout << "Loaded " << std::dec << counter << "/" << packetCount << " packets successfully" << endl;
-            } else {
+            if (!file.parsePacket()) {
                 cout << "Unable to load packet " << std::dec << counter << " expected to get " << packetCount << endl;
             }
         }
