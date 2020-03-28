@@ -6,6 +6,8 @@
 #define VIDEO_LEARNING_MP2TSPACKET_H
 
 #import <vector>
+#include "MP2TSStreamTypes.h"
+
 namespace MP2TS {
 
     struct AdaptationField_t {
@@ -19,9 +21,15 @@ namespace MP2TS {
         bool adaptationFieldExtensionFlag;
     };
 
-    struct ProgramEntries_t {
+    struct ProgramAssociationEntry_t {
         uint16_t programNumber;
         uint16_t pid;
+    };
+
+    struct ProgramMapEntry_t {
+        StreamType streamType;
+        uint16_t elementaryPid;
+        std::vector<uint8_t> descriptor;
     };
 
     struct ProgramSpecificInformation_t {
@@ -34,7 +42,7 @@ namespace MP2TS {
         bool currentNextIndicator;
 
         // Program Association Table
-        std::vector<ProgramEntries_t> programEntries;
+        std::vector<ProgramAssociationEntry_t> programEntries;
         uint32_t crc;
 
         // Program Map Table
@@ -42,6 +50,7 @@ namespace MP2TS {
         uint16_t pcrPid;
         uint16_t programInfoLength;
         std::vector<uint8_t> descriptor;
+        std::vector<std::shared_ptr<ProgramMapEntry_t>> programMapEntries;
     };
 
     class Packet {

@@ -2,11 +2,12 @@
 // Created on 3/17/20.
 //
 
+#include <iostream>
 #include "MP2TSFile.h"
 
 namespace MP2TS {
 
-    File::File(std::string filePath): path(filePath) {
+    File::File(std::string filePath): path(filePath), hasPidMap(false) {
         inFile.open(path, std::ios::binary);
         inFile.unsetf(std::ios::skipws);
         programMapPid = INT_MAX;
@@ -55,6 +56,21 @@ namespace MP2TS {
             }
         } else if (packet->PID == programMapPid) {
             packet->readProgramMap();
+
+            std::cout << "Read Program Map ";
+            for (auto pm : packet->psiData->programMapEntries) {
+                pidTypes.insert(std::make_pair(pm->elementaryPid, pm->streamType));
+                std::cout << " PID:" << pm->elementaryPid << "='" << streamTypeToString(pm->streamType) << "' ";
+            }
+            std::cout << std::endl;
+
+            hasPidMap = true;
+        } else if (hasPidMap) {
+            StreamType type = pidTypes[packet->PID];
+            std::cout << "Parsed packet for"
+                << " PID: " << packet->PID
+                << " Type: '" << streamTypeToString(type) << "'"
+                << std::endl;
         }
 
         return packet;

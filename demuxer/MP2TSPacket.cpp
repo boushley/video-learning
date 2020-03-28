@@ -9,12 +9,14 @@
 namespace MP2TS {
 
     const int Packet::size = 188;
+
     const uint8_t Packet::syncByte = static_cast<uint8_t>(0b0100'0111);
 
     Packet::Packet(std::unique_ptr<std::vector<uint8_t>> bytes) : rawBytes(*bytes) {
         if (rawBytes[0] != Packet::syncByte) {
-            std::cout << "Sync Byte Doesn't Match!! const: " << std::bitset<8>(Packet::syncByte) << " data: "
-                      << std::bitset<8>(rawBytes[0]) << std::endl;
+            std::cout << "Sync Byte Doesn't Match!! const: " << std::bitset<8>(Packet::syncByte)
+                    << " data: " << std::bitset<8>(rawBytes[0])
+                    << std::endl;
             exit(3);
         }
 
@@ -47,18 +49,18 @@ namespace MP2TS {
             readProgramAssociationTable();
         }
 
-        std::cout << "Transport Error? " << transportErrorIndicator
-                  << " Payload Start? " << payloadUnitStartIndicator
-                  << " Priority? " << transportPriority
-                  << " PID: " << PID
-                  << " scrambling? " << int(transportScramblingControl)
-                  << " adaptation control? " << int(adaptationFieldControl)
-                  << " continuity counter: " << int(continuityCounter)
-                  << " has adaptation? " << hasAdaptationField
-                  << " hasPayload? " << hasPayload
-                  << " data start: " << int(dataStartPoint)
-                  << " pointerField: " << (int) pointerField
-                  << std::endl;
+        // std::cout << "Transport Error? " << transportErrorIndicator
+        //           << " Payload Start? " << payloadUnitStartIndicator
+        //           << " Priority? " << transportPriority
+        //           << " PID: " << PID
+        //           << " scrambling? " << int(transportScramblingControl)
+        //           << " adaptation control? " << int(adaptationFieldControl)
+        //           << " continuity counter: " << int(continuityCounter)
+        //           << " has adaptation? " << hasAdaptationField
+        //           << " hasPayload? " << hasPayload
+        //           << " data start: " << int(dataStartPoint)
+        //           << " pointerField: " << (int) pointerField
+        //           << std::endl;
     }
 
     void Packet::readProgramMap() {
@@ -84,46 +86,26 @@ namespace MP2TS {
         int current = dataStartPoint + 12 + psiData->programInfoLength;
         int sectionEnd = dataStartPoint + 2 + psiData->sectionLength;
         while ((sectionEnd - current) > 4) {
-            uint8_t streamType = rawBytes[current++];
+            std::shared_ptr<ProgramMapEntry_t> programMap = std::make_shared<ProgramMapEntry_t>();
+            programMap->streamType = (StreamType)rawBytes[current++];
             // reserved: rawBytes[current] & 0b1110'0000
-            uint16_t elementaryPid = ((rawBytes[current] & 0b0001'1111) << 8) | rawBytes[current+1];
+            programMap->elementaryPid = ((rawBytes[current] & 0b0001'1111) << 8) | rawBytes[current+1];
             current += 2;
 
             // reserved: rawBytes[current] & 0b1111'0000
             uint16_t esInfoLength = ((rawBytes[current] & 0b0000'1111) << 8) | rawBytes[current + 1];
             current += 2;
 
-            std::vector<uint8_t> subDescriptorBytes = std::vector(rawBytes.begin() + current, rawBytes.begin() + current + esInfoLength);
-            std::string subDescriptor(subDescriptorBytes.begin(), subDescriptorBytes.end());
+            programMap->descriptor = std::vector(rawBytes.begin() + current, rawBytes.begin() + current + esInfoLength);
             current += esInfoLength;
 
-            std::cout << "Stream!!!"
-                << " stream type: " << (int)streamType
-                << " elementary PID: " << (int)elementaryPid
-                << " length: " << (int)esInfoLength
-                << " sub descriptor: ";
-            std::copy(subDescriptorBytes.begin(), subDescriptorBytes.end(), std::ostream_iterator<int>(std::cout));
-            std::cout << std::endl;
+            psiData->programMapEntries.push_back(programMap);
         }
 
         psiData->crc = (rawBytes[sectionEnd - 3] << 24) |
                        (rawBytes[sectionEnd - 2] << 16) |
                        (rawBytes[sectionEnd - 1] << 8) |
                        rawBytes[sectionEnd];
-
-
-
-        std::cout << "Reading Program Map Table ID: " << (int) psiData->tableId
-                  << " sectionLength: " << psiData->sectionLength
-                  << " transportStreamId: " << psiData->transportStreamId
-                  << " programInfoLength: " << psiData->programInfoLength
-                  << " descriptor:" << descriptor
-                  << " versionNumber: " << (int) psiData->versionNumber
-                  << " currentNextIndicator: " << psiData->currentNextIndicator
-                  << " pcrPid: " << psiData->pcrPid
-                  << " sectionNumber: " << (int) sectionNumber
-                  << " lastSectionNumber: " << (int) lastSectionNumber
-                  << " crc: " << psiData->crc << std::endl;
     }
 
     void Packet::readProgramAssociationTable() {
@@ -142,21 +124,22 @@ namespace MP2TS {
                        (rawBytes[dataStartPoint + 14] << 8) |
                        rawBytes[dataStartPoint + 15];
 
-        std::cout << "Program Association Table Table ID: " << (int) psiData->tableId << " sectionLength: " << psiData->sectionLength
-                  << " transportStreamId: " <<
-                  psiData->transportStreamId << " versionNumber: " << (int) psiData->versionNumber
-                  << " currentNextIndicator: " << psiData->currentNextIndicator <<
-                  " sectionNumber: " << (int) sectionNumber << " lastSectionNumber: " << (int) lastSectionNumber
-                  << " crc: " << psiData->crc << std::endl;
+        // std::cout << "Program Association Table Table ID: " << (int) psiData->tableId << " sectionLength: " << psiData->sectionLength
+        //           << " transportStreamId: " <<
+        //           psiData->transportStreamId << " versionNumber: " << (int) psiData->versionNumber
+        //           << " currentNextIndicator: " << psiData->currentNextIndicator <<
+        //           " sectionNumber: " << (int) sectionNumber << " lastSectionNumber: " << (int) lastSectionNumber
+        //           << " crc: " << psiData->crc << std::endl;
 
         for (int i = sectionNumber; i <= lastSectionNumber; i++) {
-            ProgramEntries_t programEntry;
+            ProgramAssociationEntry_t programEntry;
             programEntry.programNumber = (rawBytes[dataStartPoint + 8] << 8) | rawBytes[dataStartPoint + 9];
             // reserved: rawBytes[dataStartPoint + 10] & 0b1110'0000
             programEntry.pid = ((rawBytes[dataStartPoint + 10] & 0b0001'1111) << 8) | rawBytes[dataStartPoint + 11];
             psiData->programEntries.push_back(programEntry);
-            std::cout << "ProgramNumber: " << psiData->programEntries[0].programNumber << " PID: " << programEntry.pid
-                      << std::endl;
+            // std::cout << "ProgramNumber: " << psiData->programEntries[0].programNumber
+            //         << " PID: " << programEntry.pid
+            //         << std::endl;
         }
     }
 
