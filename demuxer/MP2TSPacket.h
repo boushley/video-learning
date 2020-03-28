@@ -27,10 +27,21 @@ namespace MP2TS {
     struct ProgramSpecificInformation_t {
         uint8_t tableId;
         uint16_t transportStreamId;
+        uint16_t sectionLength;
+
+        // Shared stuff
         uint8_t versionNumber;
         bool currentNextIndicator;
+
+        // Program Association Table
         std::vector<ProgramEntries_t> programEntries;
         uint32_t crc;
+
+        // Program Map Table
+        uint16_t programNumber;
+        uint16_t pcrPid;
+        uint16_t programInfoLength;
+        std::vector<uint8_t> descriptor;
     };
 
     class Packet {
@@ -38,7 +49,7 @@ namespace MP2TS {
         static const int size;
         static const uint8_t syncByte;
 
-        std::vector<uint8_t> &rawBytes;
+        std::vector<uint8_t> rawBytes;
         bool transportErrorIndicator;
         bool payloadUnitStartIndicator;
         bool transportPriority;
@@ -53,9 +64,10 @@ namespace MP2TS {
         void readProgramMap();
 
     private:
+        uint8_t dataStartPoint;
         uint8_t readAdaptationField();
-
-        void readProgramAssociationTable(uint8_t startPoint);
+        void readProgramAssociationTable();
+        void readPsiHeader();
     };
 }
 
